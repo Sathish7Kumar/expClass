@@ -1,5 +1,6 @@
  const express = require("express")
 const userData = require("./schema")
+const bcrypt = require('bcrypt')
 
  const router = express.Router()
 
@@ -8,13 +9,14 @@ const userData = require("./schema")
 // post :
 router.post('/users',async(req,res)=>{
     try {
-        const {name,email,mobileNum} = req.body
+        const {name,email,mobileNum,password} = req.body
         const user = await userData.findOne({email})
         if(user){
             res.send({message:"user already exists"})
         }
         else{
-            const newUser = new userData({name,email,mobileNum})
+            const hashedPassword = await bcrypt.hash(password,10)
+            const newUser = new userData({name,email,mobileNum,password:hashedPassword})
             await newUser.save()
             res.send({message:"user created"})
         }
@@ -50,8 +52,9 @@ router.get("/users/:id",async(req,res)=>{
 router.put('/users/:id',async(req,res)=>{
     try {
         const id = req.params.id
-        const {name,email,mobileNum} = req.body
-        await userData.findByIdAndUpdate(id,{name,email,mobileNum})
+        const {name,email,mobileNum,password} = req.body
+        const hashedPassword = await bcrypt.hash(password,10)
+        await userData.findByIdAndUpdate(id,{name,email,mobileNum,password:hashedPassword})
         res.send({message:"user Updated"})
     } catch (error) {
         console.log("user updating user : " + error);
@@ -70,4 +73,3 @@ router.delete('/users/:id',async(req,res)=>{
 })
 
 module.exports = router
-
