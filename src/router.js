@@ -1,6 +1,8 @@
  const express = require("express")
 const userData = require("./schema")
 const bcrypt = require('bcrypt')
+const generateToken = require("./token")
+const verifyToken = require("./verifyToken")
 
  const router = express.Router()
 
@@ -25,6 +27,30 @@ router.post('/users',async(req,res)=>{
     }
 })
 
+// postLogin 
+
+router.post('/users/login',async(req,res)=>{
+    try {
+        const {name,email,password} = req.body
+
+        const user = await userData.findOne({email})
+        // user = {id,name,email,password}
+        if(user){
+            const comparePwd = await bcrypt.compare(password,user.password)
+            if(comparePwd){
+                const token = generateToken(user)
+                res.send({userName:user.name,userToken :token})
+            }else{
+                res.send({message:"invalid password"})
+            }
+        }else{
+           res.send({message:"can't find user"}) 
+        }
+    } catch (error) {
+        console.log("err logging in ",error);
+    }
+})
+
 // get : 
 
 router.get('/users',async(req,res)=>{
@@ -46,6 +72,10 @@ router.get("/users/:id",async(req,res)=>{
     } catch (error) {
         console.log("user getting user : " + error);
     }
+})
+
+router.get('/authUser',verifyToken,(req,res)=>{
+    res.send({message:"welcome User"})
 })
 
 // update : 
